@@ -12,7 +12,7 @@ class XorCipher : PayloadDecryptor {
     override val name = "XOR"
 
     override fun decrypt(data: ByteArray, key: ByteArray?): ByteArray? {
-        if (key.isNullOrEmpty()) return null // this cipher requires a key; let other decryptors try instead
+        if (key == null || key.isEmpty()) return null // this cipher requires a key; let other decryptors try instead
         return ByteArray(data.size) { i -> (data[i].toInt() xor key[i % key.size].toInt()).toByte() }
     }
 }

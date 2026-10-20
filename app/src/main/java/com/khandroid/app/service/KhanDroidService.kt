@@ -14,6 +14,7 @@ import com.khandroid.app.net.Forwarder
 import com.khandroid.app.net.PacketFilter
 import com.khandroid.app.net.UdpExporter
 import com.khandroid.app.net.crypto.DecryptorRegistry
+import com.khandroid.app.net.crypto.FoxucDecryptor
 import com.khandroid.app.net.crypto.SubstitutionCipher
 import com.khandroid.app.net.crypto.XorCipher
 import com.khandroid.app.net.crypto.XxteaCipher
@@ -100,7 +101,9 @@ class KhanDroidService : VpnService() {
 
         val ca = if (cfg.mitmEnabled) CaManager(this).also { caManager = it } else null
         val decryptKeyBytes = cfg.decryptKeyHex?.let { hexToBytes(it) }
-        val dao = KhanDroidDatabase.get(this).httpExchangeDao()
+        val db = KhanDroidDatabase.get(this)
+        val dao = db.httpExchangeDao()
+        val tcpDao = db.tcpConnectionDao()
 
         val filter = PacketFilter(cfg)
         val udpExporter = UdpExporter(this, cfg.udpHost, cfg.udpPort).also { it.start() }
@@ -111,7 +114,8 @@ class KhanDroidService : VpnService() {
             mitmEnabled = cfg.mitmEnabled,
             caManager = ca,
             decryptKey = decryptKeyBytes,
-            onHttpExchange = { entity -> serviceScope.launch { dao.insert(entity) } }
+            onHttpExchange = { entity -> serviceScope.launch { dao.insert(entity) } },
+            onConnectionEvent = { entity -> serviceScope.launch { tcpDao.insert(entity) } }
         )
         exporter = udpExporter
         forwarder = fwd
@@ -141,6 +145,13 @@ class KhanDroidService : VpnService() {
                 runCatching { DecryptorRegistry.register(SubstitutionCipher.fromHex(it)) }
                     .onFailure { e -> Log.e(TAG, "invalid substitution table", e) }
             }
+            "Foxuc-Substitution" -> cfg.substitutionTableHex?.let {
+                runCatching {
+                    val sub = SubstitutionCipher.fromHex(it)
+                    DecryptorRegistry.register(FoxucDecryptor(sub))
+                }.onFailure { e -> Log.e(TAG, "invalid substitution table for Foxuc", e) }
+            }
+            "Foxuc-XXTEA" -> DecryptorRegistry.register(FoxucDecryptor(XxteaCipher()))
             else -> {} // decryption off
         }
     }

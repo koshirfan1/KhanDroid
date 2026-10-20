@@ -1,0 +1,45 @@
+# Built application files
+*.apk
+*.ap_
+*.aab
+
+# Files for the Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+
+# Local configuration file (sdk.path, etc.)
+local.properties
+
+# IDE files
+.idea/
+.gradle/
+*.iml
+*.iws
+*.ipr
+.navigation/
+
+# Log files
+*.log
+
+# Android Studio Preview screenshot tests
+captures/
+
+# External native build folder
+.cxx/
+.externalNativeBuild/
+
+# Python cache / virtualenvs (for tools/khandroid_receiver.py)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.artifacts/

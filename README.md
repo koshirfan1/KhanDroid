@@ -158,3 +158,31 @@ tools/
 - No HAR/cURL export from the Sessions screen yet.
 - No Room schema migrations set up (fine while `version = 1`; add a
   migration path before changing the entity shape later).
+
+## DTC (Dragon Tiger Club) Game App Network Analysis
+
+Under-the-hood network protocols and layers used in the DTC (Dragon Tiger Club) game app:
+
+### 1. Transport & Network Layer Protocols
+* **TCP (Transmission Control Protocol)**: Real-time gameplay actions, betting, room entry, and core communication over Port 9999 and gateway ports 6001 / 6002 via raw TCP streaming.
+* **HTTPS / TLS 1.3 (Transport Layer Security)**: User login, authentication, API requests, and asset/config downloading over standard web port 443 with secure TLS encryption.
+* **UDP (User Datagram Protocol)**: Packet capture and forwarding (e.g., mirroring traffic via PCAPDroid to Port 5123).
+
+### 2. Application & Game-Level Protocols
+* **Foxuc Gaming Protocol**: Custom binary TCP protocol with an 8-byte header structure (`wMainCmd` and `wSubCmd`).
+* **Custom Substitution Stream Cipher**: Native C++ library (`libqpry_lua.so`) containing a 256-byte substitution table (`recv_table`) that obfuscates/decrypts game packets.
+* **XXTEA Encryption**: Used for decrypting game config files and sensitive payloads with the key `MBCLIENT_!2016`.
+
+### 3. Scripting & Serialization
+* **Cocos2d-Lua (LuaJIT)**: Game UI and network packet serialization handled via Lua scripts (`.lua`).
+
+### Network Data Encryption & Obfuscation Components / Methods
+The components and methods that encrypt or obfuscate network data are:
+1. **Custom 256-byte Substitution Table Stream Cipher** (implemented in `libqpry_lua.so` via `CCipher::maprecvbyte`)
+2. **XXTEA Encryption Algorithm** (using key `MBCLIENT_!2016`)
+3. **XOR Stream Cipher** (using key `0x70`)
+4. **TLS 1.3 / HTTPS** (Transport layer encryption for API/web requests on Port 443)
+
+> For detailed configuration and setup steps for these decrypters in KhanDroid, see [DTC Decryption Guide](dtc_decryption_guide.md).
+
+

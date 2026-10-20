@@ -5,9 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [HttpExchangeEntity::class], version = 1, exportSchema = false)
+@Database(entities = [HttpExchangeEntity::class, TcpConnectionEntity::class], version = 2, exportSchema = false)
 abstract class KhanDroidDatabase : RoomDatabase() {
     abstract fun httpExchangeDao(): HttpExchangeDao
+    abstract fun tcpConnectionDao(): TcpConnectionDao
 
     companion object {
         @Volatile private var instance: KhanDroidDatabase? = null
@@ -18,7 +19,7 @@ abstract class KhanDroidDatabase : RoomDatabase() {
                     context.applicationContext,
                     KhanDroidDatabase::class.java,
                     "khandroid.db"
-                ).build().also { instance = it }
+                ).fallbackToDestructiveMigration().build().also { instance = it }
             }
     }
 }

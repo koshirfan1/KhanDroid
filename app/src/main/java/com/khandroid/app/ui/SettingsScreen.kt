@@ -18,13 +18,18 @@ class DraftSettings {
     var decryptCipher by mutableStateOf("None") // "None" | "XOR" | "XXTEA" | "Substitution-256"
     var decryptKeyHex by mutableStateOf("")
     var substitutionTableHex by mutableStateOf("")
+
+    var selectedApp by mutableStateOf<InstalledApp?>(null)
+    var portsText by mutableStateOf("443")
+    var udpHost by mutableStateOf("")
+    var udpPortText by mutableStateOf("5555")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(context: Context, settings: DraftSettings) {
     var cipherMenuExpanded by remember { mutableStateOf(false) }
-    val cipherOptions = listOf("None", "XOR", "XXTEA", "Substitution-256")
+    val cipherOptions = listOf("None", "XOR", "XXTEA", "Substitution-256", "Foxuc-Substitution", "Foxuc-XXTEA")
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -100,6 +105,29 @@ fun SettingsScreen(context: Context, settings: DraftSettings) {
                 label = { Text("S-box table (hex, 512 chars = 256 bytes)") },
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+
+        Spacer(Modifier.height(4.dp))
+        Text("DTC Game App Presets", style = MaterialTheme.typography.titleSmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = {
+                settings.decryptCipher = "XXTEA"
+                settings.decryptKeyHex = "4d42434c49454e545f21323031360000"
+            }) {
+                Text("XXTEA")
+            }
+            OutlinedButton(onClick = {
+                settings.decryptCipher = "XOR"
+                settings.decryptKeyHex = "70"
+            }) {
+                Text("XOR")
+            }
+            OutlinedButton(onClick = {
+                settings.decryptCipher = "Foxuc-XXTEA"
+                settings.decryptKeyHex = "4d42434c49454e545f21323031360000"
+            }) {
+                Text("Foxuc-XXTEA")
+            }
         }
     }
 }

@@ -19,20 +19,21 @@ object IpPacketBuilder {
         val udpLen = 8 + payloadLen
         val totalLen = 20 + udpLen
         val buf = ByteBuffer.allocate(totalLen).order(ByteOrder.BIG_ENDIAN)
+        val array = buf.array()
 
         // --- IPv4 header ---
-        buf.put(0, (0x45).toByte())           // version=4, IHL=5 (20 bytes, no options)
-        buf.put(1, 0)                          // DSCP/ECN
+        array[0] = 0x45.toByte()               // version=4, IHL=5 (20 bytes, no options)
+        array[1] = 0.toByte()                  // DSCP/ECN
         buf.putShort(2, totalLen.toShort())    // total length
         buf.putShort(4, 0)                     // identification
         buf.putShort(6, 0x4000.toShort())      // flags=DF, fragment offset=0
-        buf.put(8, 64)                         // TTL
-        buf.put(9, 17)                         // protocol = UDP
+        array[8] = 64.toByte()                 // TTL
+        array[9] = 17.toByte()                 // protocol = UDP
         buf.putShort(10, 0)                    // header checksum (filled below)
-        buf.put(12, srcAddr.address, 0, 4)
-        buf.put(16, dstAddr.address, 0, 4)
+        System.arraycopy(srcAddr.address, 0, array, 12, 4)
+        System.arraycopy(dstAddr.address, 0, array, 16, 4)
 
-        val ipChecksum = checksum(buf.array(), 0, 20)
+        val ipChecksum = checksum(array, 0, 20)
         buf.putShort(10, ipChecksum.toShort())
 
         // --- UDP header ---
@@ -45,7 +46,7 @@ object IpPacketBuilder {
         buf.position(28)
         buf.put(payload, payloadOffset, payloadLen)
 
-        return buf.array()
+        return array
     }
 
     /** Standard one's-complement IPv4 header checksum. */

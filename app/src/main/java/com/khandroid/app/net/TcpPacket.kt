@@ -72,19 +72,20 @@ object TcpPacketBuilder {
         val tcpLen = 20 + payloadLen
         val totalLen = 20 + tcpLen
         val buf = ByteBuffer.allocate(totalLen).order(ByteOrder.BIG_ENDIAN)
+        val array = buf.array()
 
         // --- IPv4 header ---
-        buf.put(0, 0x45.toByte())
-        buf.put(1, 0)
+        array[0] = 0x45.toByte()
+        array[1] = 0.toByte()
         buf.putShort(2, totalLen.toShort())
         buf.putShort(4, 0)
         buf.putShort(6, 0x4000.toShort()) // DF, no fragment offset
-        buf.put(8, 64)
-        buf.put(9, 6) // protocol = TCP
+        array[8] = 64.toByte()
+        array[9] = 6.toByte() // protocol = TCP
         buf.putShort(10, 0) // checksum filled below
-        buf.put(12, srcAddr.address, 0, 4)
-        buf.put(16, dstAddr.address, 0, 4)
-        buf.putShort(10, ipChecksum(buf.array(), 0, 20).toShort())
+        System.arraycopy(srcAddr.address, 0, array, 12, 4)
+        System.arraycopy(dstAddr.address, 0, array, 16, 4)
+        buf.putShort(10, ipChecksum(array, 0, 20).toShort())
 
         // --- TCP header ---
         val tcpStart = 20
@@ -92,8 +93,8 @@ object TcpPacketBuilder {
         buf.putShort(tcpStart + 2, dstPort.toShort())
         buf.putInt(tcpStart + 4, seq.toInt())
         buf.putInt(tcpStart + 8, ack.toInt())
-        buf.put(tcpStart + 12, (5 shl 4).toByte()) // data offset = 5 words (20 bytes), no options
-        buf.put(tcpStart + 13, flags.toByte())
+        array[tcpStart + 12] = (5 shl 4).toByte() // data offset = 5 words (20 bytes), no options
+        array[tcpStart + 13] = flags.toByte()
         buf.putShort(tcpStart + 14, window.toShort())
         buf.putShort(tcpStart + 16, 0) // checksum, filled below
         buf.putShort(tcpStart + 18, 0) // urgent pointer
@@ -103,10 +104,10 @@ object TcpPacketBuilder {
             buf.put(payload, payloadOffset, payloadLen)
         }
 
-        val tcpChecksum = tcpChecksum(buf.array(), srcAddr, dstAddr, tcpStart, tcpLen)
+        val tcpChecksum = tcpChecksum(array, srcAddr, dstAddr, tcpStart, tcpLen)
         buf.putShort(tcpStart + 16, tcpChecksum.toShort())
 
-        return buf.array()
+        return array
     }
 
     private fun ipChecksum(data: ByteArray, offset: Int, length: Int): Int = checksum16(data, offset, length, 0)

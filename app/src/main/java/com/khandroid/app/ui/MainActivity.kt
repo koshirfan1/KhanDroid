@@ -9,9 +9,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
@@ -40,7 +41,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val dao = KhanDroidDatabase.get(this).httpExchangeDao()
+        val db = KhanDroidDatabase.get(this)
+        val dao = db.httpExchangeDao()
+        val tcpDao = db.tcpConnectionDao()
         val settings = DraftSettings()
 
         setContent {
@@ -62,6 +65,11 @@ class MainActivity : ComponentActivity() {
                             )
                             NavigationBarItem(
                                 selected = tab == 2, onClick = { tab = 2 },
+                                icon = { Icon(Icons.Filled.Info, contentDescription = null) },
+                                label = { Text("Connections") }
+                            )
+                            NavigationBarItem(
+                                selected = tab == 3, onClick = { tab = 3 },
                                 icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                                 label = { Text("Settings") }
                             )
@@ -72,10 +80,12 @@ class MainActivity : ComponentActivity() {
                         when (tab) {
                             0 -> CaptureScreen(
                                 apps = loadInstalledApps(),
+                                settings = settings,
                                 onStart = { partialCfg -> requestVpnAndStart(partialCfg, settings) },
                                 onStop = { stopService(Intent(this, KhanDroidService::class.java)) }
                             )
                             1 -> SessionsScreen(dao)
+                            2 -> ConnectionsScreen(tcpDao)
                             else -> SettingsScreen(this, settings)
                         }
                     }
@@ -121,13 +131,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CaptureScreen(
     apps: List<InstalledApp>,
+    settings: DraftSettings,
     onStart: (CaptureConfig) -> Unit,
     onStop: () -> Unit
 ) {
-    var selectedApp by remember { mutableStateOf<InstalledApp?>(null) }
-    var portsText by remember { mutableStateOf("443") }
-    var udpHost by remember { mutableStateOf("") }
-    var udpPortText by remember { mutableStateOf("5555") }
     var appMenuExpanded by remember { mutableStateOf(false) }
     var running by remember { mutableStateOf(KhanDroidService.isRunning) }
 
@@ -146,7 +153,7 @@ fun CaptureScreen(
             onExpandedChange = { appMenuExpanded = it }
         ) {
             OutlinedTextField(
-                value = selectedApp?.let { "${it.label} (${it.packageName})" } ?: "",
+                value = settings.selectedApp?.let { "${it.label} (${it.packageName})" } ?: "",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Target app") },
@@ -156,12 +163,16 @@ fun CaptureScreen(
                 expanded = appMenuExpanded,
                 onDismissRequest = { appMenuExpanded = false }
             ) {
-                LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
-                    items(apps) { app ->
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 320.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    for (app in apps) {
                         DropdownMenuItem(
                             text = { Text("${app.label} (${app.packageName})") },
                             onClick = {
-                                selectedApp = app
+                                settings.selectedApp = app
                                 appMenuExpanded = false
                             }
                         )
@@ -171,38 +182,38 @@ fun CaptureScreen(
         }
 
         OutlinedTextField(
-            value = portsText,
-            onValueChange = { portsText = it },
+            value = settings.portsText,
+            onValueChange = { settings.portsText = it },
             label = { Text("Target ports (comma separated, blank = all)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = udpHost,
-            onValueChange = { udpHost = it },
+            value = settings.udpHost,
+            onValueChange = { settings.udpHost = it },
             label = { Text("UDP export host (your PC's LAN IP)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = udpPortText,
-            onValueChange = { udpPortText = it },
+            value = settings.udpPortText,
+            onValueChange = { settings.udpPortText = it },
             label = { Text("UDP export port") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
-                enabled = !running && selectedApp != null && udpHost.isNotBlank(),
+                enabled = !running && settings.selectedApp != null && settings.udpHost.isNotBlank(),
                 onClick = {
-                    val ports = portsText.split(",")
+                    val ports = settings.portsText.split(",")
                         .mapNotNull { it.trim().toIntOrNull() }
                         .toSet()
                     val cfg = CaptureConfig(
-                        targetPackage = selectedApp!!.packageName,
+                        targetPackage = settings.selectedApp!!.packageName,
                         targetPorts = ports,
-                        udpHost = udpHost.trim(),
-                        udpPort = udpPortText.toIntOrNull() ?: 5555
+                        udpHost = settings.udpHost.trim(),
+                        udpPort = settings.udpPortText.toIntOrNull() ?: 5555
                     )
                     onStart(cfg)
                     running = true
