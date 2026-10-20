@@ -129,6 +129,10 @@ fun SettingsScreen(context: Context, settings: DraftSettings) {
                 Text("Foxuc-XXTEA")
             }
         }
+
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider()
+        Text("KhanDroid v1.0.0-release\nDeveloper: Irfan Kosh", style = MaterialTheme.typography.bodySmall)
     }
 }
 

@@ -14,8 +14,8 @@ android {
         applicationId = "com.khandroid.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.3.0-full"
+        versionCode = 100
+        versionName = "1.0.0-release"
     }
 
     buildTypes {
