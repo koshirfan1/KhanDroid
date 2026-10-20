@@ -1,8 +1,9 @@
-name: Android CI
+name: Android CI & Release
 
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
 
@@ -10,6 +11,8 @@ jobs:
   build:
     name: Build APK (v0.1.0)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
@@ -33,3 +36,19 @@ jobs:
       with:
         name: khandroid-v0.1.0-debug
         path: app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Create GitHub Release on Tag
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: app/build/outputs/apk/debug/app-debug.apk
+        name: KhanDroid v0.1.0
+        body: |
+          KhanDroid v0.1.0 release by Irfan Kosh.
+          - Per-app, per-port VPN capture & UDP export
+          - HTTP/HTTPS inspection & custom payload decryption (XXTEA, XOR, Foxuc Protocol)
+          - PCapDroid-style Active Connections & Stream Inspector
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
