@@ -132,7 +132,7 @@ fun SettingsScreen(context: Context, settings: DraftSettings) {
 
         Spacer(Modifier.height(8.dp))
         HorizontalDivider()
-        Text("KhanDroid v1.0.0-release\nDeveloper: Irfan Kosh", style = MaterialTheme.typography.bodySmall)
+        Text("KhanDroid v0.1.0\nDeveloper: Irfan Kosh", style = MaterialTheme.typography.bodySmall)
     }
 }
 
